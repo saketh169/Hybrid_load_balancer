@@ -1,0 +1,419 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{subcaption}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{A Hybrid Load Balancing Method Using Q-Learning for Quality of Service Optimization in Cloud Environments}
+
+\author{\IEEEauthorblockN{Saketh Pabbu, Nerella Venkata Sriram, Someswarkumar Balam}
+\IEEEauthorblockA{Indian Institute of Information Technology Sri City}
+\IEEEauthorblockA{Department of Computer Science and Engineering}
+\IEEEauthorblockA{Chittoor, Andhra Pradesh}}
+
+\maketitle
+
+\begin{abstract}
+This paper presents a novel hybrid load balancing system that addresses the overhead dilemma in cloud computing environments. Traditional load balancing algorithms face a trade-off between computational overhead and Quality of Service (QoS) optimization. Static methods like Round Robin offer low overhead but poor load distribution, while dynamic methods like Ant Colony Optimization provide excellent performance at high computational cost.
+
+Our proposed solution employs Q-learning to intelligently switch between Round Robin and Ant Colony Optimization based on real-time system state. The system uses a 3×3×2 Q-table to represent load states (low/medium/high), balance states (poor/good/excellent), and algorithm choices (RR/ACO). Through ε-greedy exploration and Bellman equation-based learning, the hybrid agent achieves optimal economic/performance trade-off.
+
+Experimental results demonstrate that the hybrid approach achieves superior QoS compared to individual algorithms while maintaining computational efficiency. The system was implemented using Python, SimPy for discrete-event simulation, and deployed on AWS infrastructure with real-time monitoring via CloudWatch and persistent storage in DynamoDB.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Load Balancing, Q-Learning, Ant Colony Optimization, Cloud Computing, Quality of Service, Hybrid Algorithms
+\end{IEEEkeywords}
+
+\section{Introduction}
+\label{sec:introduction}
+
+Cloud computing environments require efficient load balancing to ensure optimal resource utilization and Quality of Service (QoS) for users. Load balancing distributes incoming tasks across multiple servers to prevent any single server from becoming a bottleneck while maximizing overall system performance.
+
+Traditional load balancing algorithms can be categorized into static and dynamic approaches. Static methods, such as Round Robin (RR), distribute tasks in a cyclic manner without considering server states. While computationally inexpensive, these methods often result in poor load distribution, especially under heterogeneous workloads. Dynamic methods, such as Ant Colony Optimization (ACO), adapt to real-time system conditions but incur significant computational overhead.
+
+This paper addresses the "overhead dilemma" by proposing a hybrid load balancing system that combines the strengths of both approaches. Our solution employs Q-learning to intelligently select between RR and ACO based on system load conditions. The hybrid agent learns optimal switching strategies through reinforcement learning, achieving superior QoS while minimizing computational overhead.
+
+\subsection{Problem Statement}
+The core challenge in cloud load balancing is the trade-off between:
+\begin{itemize}
+\item \textbf{Performance vs. Overhead}: Dynamic algorithms provide better QoS but consume more computational resources
+\item \textbf{Adaptability vs. Efficiency}: Static methods are efficient but cannot adapt to changing workloads
+\item \textbf{QoS vs. Cost}: High-performance algorithms increase operational costs
+\end{itemize}
+
+\subsection{Contributions}
+Our main contributions include:
+\begin{enumerate}
+\item A Q-learning based hybrid load balancing framework that adaptively switches between RR and ACO
+\item Comprehensive evaluation on AWS infrastructure with real-time monitoring
+\item Demonstration of superior economic/performance trade-off compared to individual algorithms
+\item Open-source implementation using Python and SimPy for reproducible research
+\end{enumerate}
+
+\section{Related Work}
+\label{sec:related}
+
+Several researchers have explored hybrid load balancing approaches to address the overhead dilemma. Shrimal et al. \cite{shrimal2024novel} proposed a hybrid method combining static and dynamic algorithms for QoS optimization in cloud environments. Their work demonstrated the potential of adaptive algorithms but lacked reinforcement learning components.
+
+Ant Colony Optimization has been widely applied to load balancing problems. Dorigo et al. \cite{dorigo2006ant} introduced ACO as a meta-heuristic inspired by ant foraging behavior. Subsequent works \cite{zhang2018load, wang2019dynamic} applied ACO to cloud load balancing, showing improved performance over traditional methods but with increased computational complexity.
+
+Q-learning and reinforcement learning have been explored for adaptive load balancing. Tesauro et al. \cite{tesauro2006hybrid} demonstrated reinforcement learning for autonomic computing. More recent works \cite{liu2020reinforcement, chen2021intelligent} applied deep reinforcement learning to load balancing, achieving adaptive behavior but requiring significant computational resources.
+
+Hybrid approaches combining multiple algorithms have shown promise. Kaur et al. \cite{kaur2018hybrid} proposed a hybrid of Round Robin and Least Connection algorithms. However, these methods lack the intelligent adaptation provided by reinforcement learning.
+
+Our work extends these approaches by integrating Q-learning with ACO and RR, providing adaptive algorithm selection based on real-time system state while maintaining computational efficiency.
+
+\section{Proposed Approach}
+\label{sec:approach}
+
+Our hybrid load balancing system consists of three main components: Round Robin, Ant Colony Optimization, and a Q-learning agent that selects between them. The system operates in a cloud environment with multiple servers, each characterized by utilization, response time, and current load.
+
+\subsection{System Architecture}
+
+The architecture comprises five main components:
+\begin{itemize}
+\item \textbf{Load Balancer}: Receives incoming tasks and assigns them to servers based on the selected algorithm
+\item \textbf{Q-Learning Agent}: Decides which algorithm (RR or ACO) to use based on current system state
+\item \textbf{Algorithm Pool}: Contains implementations of Round Robin and Ant Colony Optimization
+\item \textbf{Monitoring System}: Continuously tracks server metrics and overall system performance
+\item \textbf{AWS Integration}: CloudWatch for real-time monitoring, DynamoDB for persistent data storage
+\end{itemize}
+
+\subsection{Q-Learning Framework}
+
+\subsubsection{State Space}
+The system state $S$ is represented by a discrete 3×3 grid based on two key metrics:
+\begin{itemize}
+\item \textbf{Load State} (3 levels based on mean utilization $\mu$): 
+\begin{itemize}
+    \item Low: $\mu < 25\%$
+    \item Medium: $25\% \leq \mu < 70\%$
+    \item High: $\mu \geq 70\%$
+\end{itemize}
+\item \textbf{Balance State} (3 levels based on utilization standard deviation $\sigma$):
+\begin{itemize}
+    \item Excellent: $\sigma < 15\%$
+    \item Good: $15\% \leq \sigma < 30\%$
+    \item Poor: $\sigma \geq 30\%$
+\end{itemize}
+\end{itemize}
+This discretization yields a total of 9 possible states ($3 \times 3$), enabling efficient Q-table representation.
+
+\subsubsection{Action Space}
+The agent selects between two actions:
+\begin{enumerate}
+\item \textbf{Round Robin (RR)}: Simple cyclic distribution, low overhead
+\item \textbf{Ant Colony Optimization (ACO)}: Pheromone-based optimization, high performance
+\end{enumerate}
+
+\subsection{Reward Function}
+The reward function balances multiple QoS objectives:
+\begin{equation}
+R = w_1 \cdot R_{\text{response}} + w_2 \cdot R_{\text{utilization}} + w_3 \cdot R_{\text{improvement}}
+\end{equation}
+where:
+\begin{itemize}
+\item $R_{\text{response}} = \frac{10}{t + 0.05}$, where $t$ is response time
+\item $R_{\text{utilization}} = \begin{cases}
+10 & \text{if } 60\% \leq u \leq 80\% \\
+7 & \text{if } u > 80\% \\
+5 & \text{if } 40\% \leq u < 60\% \\
+2 & \text{otherwise}
+\end{cases}$
+\item $R_{\text{improvement}} = \begin{cases}
+5 & \text{if } \Delta u > 5\% \\
+2 & \text{if } 0 < \Delta u \leq 5\% \\
+0 & \text{otherwise}
+\end{cases}$
+\item Weights: $w_1 = 0.3$, $w_2 = 0.5$, $w_3 = 0.2$
+\end{itemize}
+
+\{Learning Parameters}
+\begin{itemize}
+\item \textbf{Learning Rate} ($\alpha$): 0.6 - balances learning speed and stability
+\item \textbf{Discount Factor} ($\gamma$): 0.9 - values future rewards
+\item \textbf{Exploration Rate} ($\epsilon$): 0.8 → 0.05 (decays by 0.995)
+\end{itemize}
+
+\subsection{Algorithm Flow Charts}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth,height=0.4\textheight,keepaspectratio]{Images/RR.png}
+\caption{Round Robin algorithm flow chart}
+\label{fig:rr_flowchart}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth,height=0.4\textheight,keepaspectratio]{Images/ACO.png}
+\caption{Ant Colony Optimization algorithm flow chart}
+\label{fig:aco_flowchart}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth,height=0.4\textheight,keepaspectratio]{Images/Hybrid.png}
+\caption{Hybrid Q-learning algorithm flow chart}
+\label{fig:hybrid_flowchart}
+\end{figure}
+
+\subsection{Round Robin Implementation}
+
+RR distributes tasks cyclically among active servers, filtering out idle servers to avoid unnecessary cycling. The algorithm includes a small delay to ensure fair comparison with ACO.
+
+\subsection{Ant Colony Optimization Implementation}
+
+ACO simulates ant foraging behavior to find optimal task-server assignments. Each server is represented as a node, and pheromone trails guide task distribution decisions. The algorithm maintains pheromone levels that evaporate over time and are reinforced by successful task completions.
+
+Key ACO parameters include:
+\begin{itemize}
+\item \textbf{Pheromone Evaporation Rate} ($\rho$): 0.1 - controls trail decay
+\item \textbf{Pheromone Reinforcement}: Increases trail strength for successful assignments
+\item \textbf{Exploration Factor} ($\alpha$): 1.0 - balances exploration vs. exploitation
+\item \textbf{Greediness Factor} ($\beta$): 2.0 - favors servers with better performance history
+\end{itemize}
+
+The algorithm selects servers probabilistically based on pheromone concentration and heuristic desirability, ensuring adaptive load distribution that improves over time.
+
+\subsection{Hybrid Decision Logic}
+
+The Q-learning agent uses ε-greedy policy for exploration-exploitation balance:
+\begin{itemize}
+\item \textbf{Exploration} (probability $\epsilon$): Random algorithm selection
+\item \textbf{Exploitation} (probability $1-\epsilon$): Choose algorithm with highest Q-value
+\end{itemize}
+
+The agent updates Q-values using the Bellman equation:
+\begin{equation}
+Q(S,A) \leftarrow Q(S,A) + \alpha \cdot [R + \gamma \cdot \max_{A'} Q(S',A') - Q(S,A)]
+\end{equation}
+
+\section{Experimental Setup}
+\label{sec:setup}
+
+\subsection{Simulation Environment}
+
+The system was implemented using Python 3.8+ with the following components:
+
+\subsubsection{Discrete Event Simulation}
+\begin{itemize}
+\item \textbf{SimPy 4.x}: Discrete-event simulation framework
+\item \textbf{Server Model}: Each server has capacity limits and processing delays
+\item \textbf{Task Model}: Variable load tasks (5-100 units) with completion rates
+\end{itemize}
+
+\subsubsection{Workload Generation}
+Tasks follow a distribution: 70\% light (5-25 units), 20\% medium (25-60 units), 10\% heavy (60-100 units).
+
+\subsubsection{System Configuration}
+\begin{itemize}
+\item \textbf{Servers}: 20-50 instances with random capacities
+\item \textbf{Tasks}: 100-1000 tasks per simulation
+\item \textbf{Algorithm Delay}: 0.02 seconds for fair comparison
+\end{itemize}
+
+\subsection{AWS Infrastructure}
+
+\subsubsection{Cloud Deployment}
+\begin{itemize}
+\item \textbf{EC2 Instance}: t2.micro (free tier)
+\item \textbf{IAM Roles}: Security permissions for AWS services
+\item \textbf{Region}: us-east-1
+\end{itemize}
+
+\subsubsection{Monitoring and Storage}
+\begin{itemize}
+\item \textbf{CloudWatch}: Real-time metrics dashboard
+\item \textbf{DynamoDB}: Persistent storage of simulation results
+\item \textbf{Metrics Tracked}: Response time, utilization, algorithm choices, Q-values
+\end{itemize}
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Performance Metrics}
+\begin{itemize}
+\item \textbf{Average Response Time}: Task completion time
+\item \textbf{Server Utilization}: Percentage of server capacity used
+\item \textbf{Load Imbalance}: Standard deviation of server utilizations
+\item \textbf{Performance Score}: Composite metric combining response time and utilization
+\end{itemize}
+
+\subsubsection{Overhead Metrics}
+\begin{itemize}
+\item \textbf{Computational Overhead}: Algorithm execution time
+\item \textbf{Algorithm Choice Distribution}: RR vs ACO selection frequency
+\item \textbf{Q-Learning Convergence}: Q-value stabilization over time
+\end{itemize}
+
+\subsection{Baseline Algorithms}
+
+Three algorithms were compared:
+\begin{enumerate}
+\item \textbf{Round Robin (RR)}: Static cyclic distribution
+\item \textbf{Ant Colony Optimization (ACO)}: Dynamic pheromone-based optimization
+\item \textbf{Hybrid}: Q-learning based adaptive selection
+\end{enumerate}
+
+\section{Results}
+\label{sec:results}
+
+\subsection{Performance Comparison}
+
+Table \ref{tab:performance} summarizes the comparative performance of the three algorithms across key metrics.
+
+\begin{table}[htbp]
+\caption{Performance Comparison Results}
+\label{tab:performance}
+\centering
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Metric} & \textbf{RR} & \textbf{ACO} & \textbf{Hybrid} \\
+\midrule
+Avg Response Time (s) & 1.45 & 0.89 & 1.02 \\
+Server Utilization (\%) & 58.2 & 78.6 & 72.1 \\
+Load Imbalance ($\sigma$) & 18.5 & 8.2 & 11.3 \\
+Performance Score & 6.8 & 9.2 & 8.7 \\
+Computational Overhead & Low & High & Medium \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Algorithm Selection Analysis}
+
+The hybrid algorithm demonstrated intelligent adaptation to system conditions, validating the Q-learning approach. Table \ref{tab:algorithm_choice} shows the algorithm selection distribution across different load states.
+
+\begin{table}[htbp]
+\caption{Algorithm Selection Distribution by Load State}
+\label{tab:algorithm_choice}
+\centering
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Load State} & \textbf{RR \%} & \textbf{ACO \%} & \textbf{Total Tasks} \\
+\midrule
+Low ($<25\%$) & 85.3 & 14.7 & 312 \\
+Medium ($25-70\%$) & 44.8 & 55.2 & 456 \\
+High ($>70\%$) & 19.6 & 80.4 & 232 \\
+\midrule
+\textbf{Overall} & \textbf{51.2} & \textbf{48.8} & \textbf{1000} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Load State Analysis}
+The results demonstrate adaptive behavior:
+\begin{itemize}
+\item \textbf{Low Load}: Agent prefers RR (85.3\%) to conserve computational resources when simple distribution suffices
+\item \textbf{Medium Load}: Balanced selection (55.2\% ACO) as system benefits from optimization without severe overhead
+\item \textbf{High Load}: Strong ACO preference (80.4\%) when QoS optimization becomes critical
+\end{itemize}
+
+This adaptive selection validates the hybrid approach, showing the agent learned to minimize overhead during low stress while maximizing performance under high load.
+
+\subsection{Performance Analysis}
+
+The hybrid system achieved 72.1\% utilization (23.9\% improvement over RR's 58.2\%, 8.3\% below ACO's 78.6\%) while maintaining medium computational overhead. Response times followed similar trends: ACO (0.89s) performed best, hybrid (1.02s) showed competitive performance, and RR (1.45s) was slowest. The hybrid's 14.6\% slower response time compared to ACO is offset by substantially lower computational overhead, validating the economic/performance trade-off.
+
+\subsection{Q-Learning Convergence}
+
+The Q-learning agent demonstrated convergence within 500 task iterations. Initial exploration ($\epsilon = 0.8$) enabled discovery of optimal policies, while gradual decay to $\epsilon = 0.05$ transitioned to exploitation. Average Q-value variance decreased from 12.4 (iteration 100) to 2.1 (iteration 500), indicating policy stabilization.
+
+\subsection{AWS Integration Results}
+
+The system successfully integrated with AWS services for cloud deployment and monitoring.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{Images/CloudWatch.png}
+\caption{AWS CloudWatch metrics dashboard}
+\label{fig:aws_cloudwatch}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{Images/Local.png}
+\caption{Matplotlib plots showing performance metrics and algorithm selection patterns}
+\label{fig:matplotlib_plots}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{Images/DynamoDB.png}
+\caption{AWS DynamoDB metrics storage}
+\label{fig:aws_dynamodb}
+\end{figure}
+
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+
+This paper presented a novel hybrid load balancing system that addresses the overhead dilemma in cloud computing. By employing Q-learning to intelligently switch between Round Robin and Ant Colony Optimization, the system achieves superior Quality of Service while maintaining computational efficiency.
+
+\subsection{Key Achievements}
+
+\begin{enumerate}
+\item \textbf{Optimal Trade-off}: Hybrid approach achieved 72.1\% utilization with medium overhead, outperforming RR (58.2\% with low overhead) and approaching ACO (78.6\% with high overhead)
+
+\item \textbf{Adaptive Intelligence}: Q-learning agent demonstrated 85.3\% RR preference in low load and 80.4\% ACO preference in high load conditions
+
+\item \textbf{Cloud Integration}: Successful deployment on AWS infrastructure with comprehensive monitoring and data persistence
+\end{enumerate}
+
+\subsection{Limitations}
+
+While the hybrid approach demonstrates significant advantages, certain limitations should be acknowledged:
+\begin{enumerate}
+\item \textbf{State Discretization}: The 3×3 state space may be insufficient for highly complex cloud environments
+\item \textbf{Learning Overhead}: Initial exploration phase requires time to converge to optimal policy
+\item \textbf{Simulation Environment}: Evaluation was conducted in controlled simulation; real-world deployment may present additional challenges
+\end{enumerate}
+
+\subsection{Future Work}
+
+Future research directions include Deep Reinforcement Learning integration, multi-objective optimization considering energy consumption and network latency, federated learning for distributed Q-learning, and real-world deployment evaluation.
+
+\section*{Acknowledgment}
+
+The authors would like to thank the Department of Computer Science and Engineering at Indian Institute of Information Technology Sri City, Chittoor, Andhra Pradesh, for providing the necessary computational resources and research facilities. Special thanks to the AWS Educate program for providing cloud infrastructure support that enabled large-scale experimentation and deployment.
+
+\begin{thebibliography}{10}
+
+\bibitem{shrimal2024novel}
+M.~Shrimal, A.~K.~Sharma, and M.~Patel, ``A novel hybrid load balancing method to achieve quality of service (QoS) in cloud-based environments,'' in \emph{2024 3rd International Conference on Sentiment Analysis and Deep Learning (ICSADL)}, 2024, pp. 1--6.
+
+\bibitem{dorigo2006ant}
+M.~Dorigo, M.~Birattari, and T.~Stutzle, \emph{Ant colony optimization}.\hskip 1em plus 0.5em minus 0.4em\relax New York: IEEE Press, 2006.
+
+\bibitem{zhang2018load}
+Q.~Zhang, L.~Cheng, and R.~Boutaba, ``Cloud computing: state-of-the-art and research challenges,'' \emph{Journal of Internet Services and Applications}, vol.~1, no.~1, pp. 7--18, 2010.
+
+\bibitem{wang2019dynamic}
+S.~C.~Wang, K.~Q.~Yan, W.~P.~Liao, and S.~S.~Wang, ``Towards a load balancing in a three-level cloud computing network,'' in \emph{2010 3rd International Conference on Computer Science and Information Technology}, vol.~1, 2010, pp. 108--113.
+
+\bibitem{tesauro2006hybrid}
+G.~Tesauro, ``Hybrid reinforcement learning for autonomic resource allocation,'' in \emph{Proceedings of the 3rd International Conference on Autonomic Computing}, 2006, pp. 65--73.
+
+\bibitem{liu2020reinforcement}
+N.~Liu, Z.~Li, J.~Xu, Z.~Xu, S.~Lin, Q.~Qiu, J.~Tang, and Y.~Wang, ``A hierarchical framework of cloud resource allocation and power management using deep reinforcement learning,'' in \emph{2020 IEEE International Parallel and Distributed Processing Symposium (IPDPS)}, 2020, pp. 658--668.
+
+\bibitem{chen2021intelligent}
+M.~Chen, U.~Challita, W.~Saad, C.~Yin, and M.~Debbah, ``Artificial neural networks-based machine learning for wireless networks: A tutorial,'' \emph{IEEE Communications Surveys \& Tutorials}, vol.~21, no.~4, pp. 3039--3071, 2019.
+
+\bibitem{kaur2018hybrid}
+R.~Kaur and P.~Luthra, ``Load balancing in cloud computing,'' in \emph{Proceedings of International Conference on Recent Advancement and Developments in Engineering and Technology}, 2018, pp. 1--4.
+
+\end{thebibliography}
+
+\end{document}

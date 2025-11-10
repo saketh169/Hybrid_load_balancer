@@ -1,0 +1,52 @@
+LOAD BALANCER SIMULATION - COMPREHENSIVE SUMMARY
+============================================================
+Simulation ID: None
+Generated: 2025-10-24 01:26:32
+============================================================
+
+ALGORITHM: ACO
+----------------------------------------
+Total Tasks Processed: 5,963
+Unique Servers Used: 25
+Average Response Time: 1.057 seconds
+Response Time Std Dev: 0.207 seconds
+Average Utilization: 45.55%
+Utilization Std Dev: 28.90%
+Average Task Load: 27.21
+Min/Max Utilization: 0.0% / 99.8%
+Min/Max Response Time: 0.525s / 1.608s
+
+============================================================
+
+ALGORITHM: RoundRobin
+----------------------------------------
+Total Tasks Processed: 5,250
+Unique Servers Used: 25
+Average Response Time: 1.596 seconds
+Response Time Std Dev: 0.348 seconds
+Average Utilization: 43.94%
+Utilization Std Dev: 29.10%
+Average Task Load: 27.21
+Min/Max Utilization: 0.0% / 98.3%
+Min/Max Response Time: 0.577s / 2.551s
+
+============================================================
+
+ALGORITHM: Hybrid
+----------------------------------------
+Total Tasks Processed: 10,945
+Unique Servers Used: 25
+Average Response Time: 1.323 seconds
+Response Time Std Dev: 0.302 seconds
+Average Utilization: 44.48%
+Utilization Std Dev: 29.23%
+Average Task Load: 27.21
+Min/Max Utilization: 0.0% / 99.9%
+Min/Max Response Time: 0.509s / 2.497s
+
+Algorithm Usage Breakdown:
+  ACO: 560 tasks (56.0%)
+  RR: 440 tasks (44.0%)
+
+============================================================
+
